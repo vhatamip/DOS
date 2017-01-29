@@ -25,14 +25,14 @@
 !  convg_crit=1E10-7 can not handel the resonance omega, convg_crit=1E10-8 fixed the problem
 !  
 !****************************************************************************    
-	INTEGER :: status
+	INTEGER :: status, number_nodes
 	INTEGER :: i, j, l, m
-	INTEGER, PARAMETER :: omega_n_1=200, omega_n_2=1, omega_n_3=200
+	INTEGER, PARAMETER :: omega_n_1=300, omega_n_2=400, omega_n_3=300
     INTEGER, PARAMETER :: omega_n=omega_n_1+omega_n_2+omega_n_3-2
 	INTEGER, PARAMETER :: delta_n=3     !define number of deltas 
-	INTEGER, PARAMETER :: nodes=3 !N points of (k_ρ) from 0 to k_vac,
+	INTEGER, PARAMETER :: nodes=49 !N points of (k_ρ) from 0 to k_vac,
 										!simpson 1/3, ""N must be even"", k_vac is excluded from the first integral as k_z1=0.0.
-	INTEGER, PARAMETER :: n_k_rho_mesh=20
+	INTEGER, PARAMETER :: n_k_rho_mesh=50
 	INTEGER, PARAMETER :: media_n=3
 	
 	REAL(KIND=8) :: error
@@ -43,14 +43,14 @@
 	REAL(KIND=8), DIMENSION(omega_n_1) :: omega_1
     REAL(KIND=8), DIMENSION(omega_n_2) :: omega_2
     REAL(KIND=8), DIMENSION(omega_n_3) :: omega_3
-	REAL(KIND=8), DIMENSION(omega_n) :: omega
+	REAL(KIND=8), DIMENSION(omega_n) :: omega, k_rho_final
 	REAL(KIND=8), DIMENSION(nodes) :: k_rho
 	REAL(KIND=8), DIMENSION(nodes) :: f_k_rho_e, f_k_rho_m
 	REAL(KIND=8), ALLOCATABLE, DIMENSION(:,:) :: intg_e, intg_e_t, intg_m, intg_m_t, iter3, LDOSem
 	REAL(KIND=8), PARAMETER :: c0=299792458 !Speed of light in vacuum (m/s)
 	REAL(KIND=8), PARAMETER :: pi=4*ATAN(1.0) !pi=3.14...
 	!REAL(KIND=8), PARAMETER :: distance = 1.0E-8 ! 10nm
-	REAL(KIND=8), PARAMETER :: distance = 1.0 ! 1m
+	REAL(KIND=8), PARAMETER :: distance = 1000.0 ! 1m
 	REAL(KIND=8), PARAMETER :: convg_crit=1.0E-9 ! convergence criterion 
 	                                             
 	COMPLEX(KIND=8), DIMENSION(media_n, omega_n) ::  eps, mu
@@ -112,8 +112,8 @@ CALL cluster_mesh_left(int_3_min, int_3_max, omega_n_3, omega_3)
 CALL sort_mesh(omega_1, omega_2, omega_3, omega)
 	  
 
-delta=(/0.01*distance, 0.6*distance, distance/)
-delta=(/1.0E-8, .6E-8, 5.0E-7/)
+!delta=(/0.01*distance, 0.6*distance, distance/)
+delta=(/1.0E-8, 5.0E-7, 5.0E-7/)
 
 PRINT*, 'delta', delta
 print*, distance
@@ -132,8 +132,8 @@ ALLOCATE(LDOSem(delta_n,omega_n), intg_e(delta_n,omega_n), intg_e_t(delta_n,omeg
 	   !DO i=2,2 !delta loop
 	    DO j=1, omega_n !omega loop
 			CALL mu_non_mag(j, omega(j), mu(:,j)) !ok
-			CALL eps_Basu(j, omega(j), eps(:,j)) !ok 
-			!CALL eps_Lorentz(j, omega(j), eps(:,j))
+			!CALL eps_Basu(j, omega(j), eps(:,j)) !ok 
+			CALL eps_Lorentz(j, omega(j), eps(:,j))
 		END DO	
 		OPEN(UNIT=26, FILE='eps_mu.dat', STATUS='unknown', ACTION='write', IOSTAT=status)
 		DO j=1,omega_n
@@ -150,7 +150,9 @@ ALLOCATE(LDOSem(delta_n,omega_n), intg_e(delta_n,omega_n), intg_e_t(delta_n,omeg
 		
 		
 		
-		
+		    !d_k_rho_temp=((omega(1)/c0)-0.0)/(REAL(n_k_rho_mesh)-1) ! dk_ρ in the integral
+			
+			!d_k_rho=d_k_rho_temp*(1+(0.5)/(REAL(n_k_rho_mesh)-2)) !for eliminating k_0
 		
 			
 	   !DO i=1, delta_n !delta loop
@@ -161,9 +163,11 @@ ALLOCATE(LDOSem(delta_n,omega_n), intg_e(delta_n,omega_n), intg_e_t(delta_n,omeg
 			!CALL eps_Basu(j, omega(j), eps(:,j)) !ok
 			CALL k_mag(j, omega(j), mu(:,j), eps(:,j), k) !ok
 			
-			d_k_rho_temp=(k(1)-0.0)/(REAL(n_k_rho_mesh)-1) ! dk_ρ in the integral
+			!d_k_rho_temp=(k(1)-0.0)/(REAL(n_k_rho_mesh)-1) ! dk_ρ in the integral
+			number_nodes=INT((k(1)/((omega(1)/c0)/(n_k_rho_mesh-1)))+1)
+			d_k_rho_temp=(k(1)-0.0)/(REAL(number_nodes)-1) ! dk_ρ in the integral
 			
-			d_k_rho=d_k_rho_temp*(1+(0.5)/(REAL(n_k_rho_mesh)-2)) !for eliminating k_0
+			d_k_rho=d_k_rho_temp*(1+(0.5)/(REAL(number_nodes)-2)) !for eliminating k_0
 			DO l=1,nodes !k_ρ in the first integral
 	        k_rho(l)=0.0+(l-1)*d_k_rho
 			END DO
@@ -263,9 +267,9 @@ ALLOCATE(LDOSem(delta_n,omega_n), intg_e(delta_n,omega_n), intg_e_t(delta_n,omeg
 				intg_m_t_old = intg_m_t(i,j)
 			    intg_e_t_old = intg_e_t(i,j)
 				
-				!IF (MOD(iter3(i,j),1000.0)==0) THEN
-				!print*, 'error', error, 'LDOS', intg_m_t(i,j)+intg_e_t(i,j), 'intg_m', intg_m_t(i,j), 'intg_e', intg_e_t(i,j), 'i', i, 'j', j, 'iter', iter3(i,j), 'k_rho', k_rho(nodes)
-				!END IF
+				IF (MOD(iter3(i,j),100000.0)==0) THEN
+				print*, 'error', error, 'LDOS', intg_m_t(i,j)+intg_e_t(i,j), 'i', i, 'j', j, 'iter', iter3(i,j), 'k_rho', k_rho(nodes), 'd', distance, 'z', delta(2)
+				END IF
 				
 				IF (error < convg_crit) EXIT
 				 				
@@ -274,12 +278,20 @@ ALLOCATE(LDOSem(delta_n,omega_n), intg_e(delta_n,omega_n), intg_e_t(delta_n,omeg
 				
 			!intg(i,j)=intg1(i,j) +intg2(i,j) + intg3(i,j)	
 		    LDOSem(i,j)=intg_m_t(i,j)+intg_e_t(i,j)
-					
-			print*, 'error', error, 'LDOS', LDOSem(i,j), 'intg_m', intg_m_t(i,j), 'intg_e', intg_e_t(i,j), 'i', i, 'j', j, 'iter', iter3(i,j), 'k_rho', k_rho(nodes)
+			k_rho_final(j)=	k_rho(nodes)	
+			
+			print*, 'error_finallllll', error, 'LDOS', LDOSem(i,j), 'intg_m', intg_m_t(i,j), 'i', i, 'j', j, 'iter', iter3(i,j), 'k_rho', k_rho(nodes)
 			
 		END DO ! omega loop
 	   END DO  ! delta loop
 	   
+	   
+	    OPEN(UNIT=77, FILE='k_rho.dat', STATUS='unknown', ACTION='write', IOSTAT=status)
+		DO j=1,omega_n
+			WRITE(77,300)	omega(j), k_rho_final(j)
+	    END DO
+	  
+300	FORMAT (2(E30.20))
 	   
 	   !DO i= 1,delta_n	!delta
        ! Do j= 1,omega_n !omega

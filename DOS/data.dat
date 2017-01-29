@@ -6,7 +6,7 @@ Third delta value             0.10E-3
 Blackbody 
 Far field
 omega 1                       0.100000000E14  
-omega 2                       0.178540825E15
+omega 2                       0.149282798E15
 omega 3                       0.178540825E15  
 omega 4                       0.100000000E16
 
@@ -16,3 +16,4 @@ omega 4                       0.100000000E16
 
 1.785408498
 1.785408
+3063487023143150e+14

@@ -175,10 +175,10 @@ INTEGER :: l, n
 n=UBOUND(k_z,2)
                 
 DO l=1, n
-            r_TM(1,l)=(eps(1) * k_z(2,l) - eps(2)*k_z(1,l))/(eps(1) * k_z(2,l) + eps(2) * k_z(1,l))
-	        r_TE(1,l)=(mu(1)  * k_z(2,l) - mu(2) *k_z(1,l))/(mu(1)  * k_z(2,l) + mu(2)  * k_z(1,l))
-			r_TM(2,l)=(eps(1) * k_z(3,l) - eps(3)*k_z(1,l))/(eps(1) * k_z(3,l) + eps(3) * k_z(1,l))
-	        r_TE(2,l)=(mu(1)  * k_z(3,l) - mu(3) *k_z(1,l))/(mu(1)  * k_z(3,l) + mu(3)  * k_z(1,l))
+            r_TM(1,l)=-(eps(1) * k_z(2,l) - eps(2)*k_z(1,l))/(eps(1) * k_z(2,l) + eps(2) * k_z(1,l))
+	        r_TE(1,l)=-(mu(1)  * k_z(2,l) - mu(2) *k_z(1,l))/(mu(1)  * k_z(2,l) + mu(2)  * k_z(1,l))
+			r_TM(2,l)=-(eps(1) * k_z(3,l) - eps(3)*k_z(1,l))/(eps(1) * k_z(3,l) + eps(3) * k_z(1,l))
+	        r_TE(2,l)=-(mu(1)  * k_z(3,l) - mu(3) *k_z(1,l))/(mu(1)  * k_z(3,l) + mu(3)  * k_z(1,l))
 END DO
 
 END SUBROUTINE Fresnel
@@ -196,13 +196,13 @@ INTEGER :: l, n
 n=UBOUND(k_rho, 1)
 
 DO l=1, n
-	      t_TE(1,l)=(((1.0-r_TE(1,l))*EXP(CMPLX(0.0,1.0)*2*k_z(1,l)*delta))/(1-r_TE(1,l)*r_TE(2,l)*EXP(CMPLX(0.0,1.0)*2*k_z(1,l)*distance)))&
+	      t_TE(1,l)=(((1.0-r_TE(1,l))*EXP(CMPLX(0.0,1.0)*k_z(1,l)*delta))/(1-r_TE(1,l)*r_TE(2,l)*EXP(CMPLX(0.0,1.0)*2*k_z(1,l)*distance)))&
 		  -(((1.0-r_TE(1,l))*r_TE(2,l)*EXP(CMPLX(0.0,1.0)*2*k_z(1,l)*(distance-delta)))/(1-r_TE(1,l)*r_TE(2,l)*EXP(CMPLX(0.0,1.0)*2*k_z(1,l)*distance)))
-		  t_TE(2,l)=(((1.0-r_TE(1,l))*EXP(CMPLX(0.0,1.0)*2*k_z(1,l)*delta))/(1-r_TE(1,l)*r_TE(2,l)*EXP(CMPLX(0.0,1.0)*2*k_z(1,l)*distance)))&
+		  t_TE(2,l)=(((1.0-r_TE(1,l))*EXP(CMPLX(0.0,1.0)*k_z(1,l)*delta))/(1-r_TE(1,l)*r_TE(2,l)*EXP(CMPLX(0.0,1.0)*2*k_z(1,l)*distance)))&
 		  +(((1.0-r_TE(1,l))*r_TE(2,l)*EXP(CMPLX(0.0,1.0)*2*k_z(1,l)*(distance-delta)))/(1-r_TE(1,l)*r_TE(2,l)*EXP(CMPLX(0.0,1.0)*2*k_z(1,l)*distance)))
-		  t_TM(1,l)=(((1.0-r_TM(1,l))*EXP(CMPLX(0.0,1.0)*2*k_z(1,l)*delta))/(1-r_TM(1,l)*r_TM(2,l)*EXP(CMPLX(0.0,1.0)*2*k_z(1,l)*distance)))&
+		  t_TM(1,l)=(((1.0-r_TM(1,l))*EXP(CMPLX(0.0,1.0)*k_z(1,l)*delta))/(1-r_TM(1,l)*r_TM(2,l)*EXP(CMPLX(0.0,1.0)*2*k_z(1,l)*distance)))&
 		  -(((1.0-r_TM(1,l))*r_TM(2,l)*EXP(CMPLX(0.0,1.0)*2*k_z(1,l)*(distance-delta)))/(1-r_TM(1,l)*r_TM(2,l)*EXP(CMPLX(0.0,1.0)*2*k_z(1,l)*distance)))
-		  t_TM(2,l)=(((1.0-r_TM(1,l))*EXP(CMPLX(0.0,1.0)*2*k_z(1,l)*delta))/(1-r_TM(1,l)*r_TM(2,l)*EXP(CMPLX(0.0,1.0)*2*k_z(1,l)*distance)))&
+		  t_TM(2,l)=(((1.0-r_TM(1,l))*EXP(CMPLX(0.0,1.0)*k_z(1,l)*delta))/(1-r_TM(1,l)*r_TM(2,l)*EXP(CMPLX(0.0,1.0)*2*k_z(1,l)*distance)))&
 		  +(((1.0-r_TM(1,l))*r_TM(2,l)*EXP(CMPLX(0.0,1.0)*2*k_z(1,l)*(distance-delta)))/(1-r_TM(1,l)*r_TM(2,l)*EXP(CMPLX(0.0,1.0)*2*k_z(1,l)*distance)))
 END DO
 	  
@@ -404,6 +404,107 @@ END DO
 f_k_rho_m=((omega*DIMAG(eps_2))/(16*(pi**2)*c0**2))*f_k_rho_m
 
 END SUBROUTINE integrand_k_rho_m
+
+SUBROUTINE integrand_k_rho_book_e(omega, eps_2, k, k_rho, k_z, t_TE, t_TM, f_k_rho_e)
+
+REAL(KIND=8), INTENT(IN) :: omega
+REAL(KIND=8), DIMENSION(:), INTENT(IN) :: k_rho
+REAL(KIND=8), DIMENSION(:), INTENT(OUT) :: f_k_rho_e
+COMPLEX(KIND=8), INTENT(IN) :: eps_2
+COMPLEX(KIND=8), DIMENSION(:), INTENT(IN) :: k
+COMPLEX(KIND=8), DIMENSION(:,:), INTENT(IN) :: k_z
+COMPLEX(KIND=8), DIMENSION(:,:), INTENT(IN) :: t_TE, t_TM
+
+INTEGER :: l, n
+REAL(KIND=8), PARAMETER :: c0=299792458
+REAL(KIND=8), PARAMETER :: pi=4*ATAN(1.0) !pi=3.14...
+
+n=UBOUND(k_rho,1)
+
+DO l=1, n
+	      f_k_rho_e(l)=(((ABS(k_z(1,l)*t_TM(1,l)))**2+(ABS(k_rho(l)*t_TM(2,l)))**2)*(((k_rho(l))**2+k_z(2,l)*CONJG(k_z(2,l)))&
+		  /(k(2)*CONJG(k(2))))+(ABS(k(1)*t_TE(2,l)))**2)*((k_rho(l))/(((ABS(k_z(2,l)))**2)*DIMAG(k_z(2,l))))
+END DO
+
+f_k_rho_e=((omega*DIMAG(eps_2))/(16*(pi**2)*c0**2))*f_k_rho_e
+
+END SUBROUTINE integrand_k_rho_book_e
+
+SUBROUTINE integrand_k_rho_book_m(omega, eps_2, k, k_rho, k_z, t_TE, t_TM, f_k_rho_m)
+
+REAL(KIND=8), INTENT(IN) :: omega
+REAL(KIND=8), DIMENSION(:), INTENT(IN) :: k_rho
+REAL(KIND=8), DIMENSION(:), INTENT(OUT) :: f_k_rho_m
+COMPLEX(KIND=8), INTENT(IN) :: eps_2
+COMPLEX(KIND=8), DIMENSION(:), INTENT(IN) :: k
+COMPLEX(KIND=8), DIMENSION(:,:), INTENT(IN) :: k_z
+COMPLEX(KIND=8), DIMENSION(:,:), INTENT(IN) :: t_TE, t_TM
+
+INTEGER :: l, n
+REAL(KIND=8), PARAMETER :: c0=299792458
+REAL(KIND=8), PARAMETER :: pi=4*ATAN(1.0) !pi=3.14...
+
+n=UBOUND(k_rho,1)
+
+DO l=1, n
+	      f_k_rho_m(l)=(((ABS(k(1)*t_TM(2,l)))**2)*(((k_rho(l))**2+k_z(2,l)*CONJG(k_z(2,l)))/(k(2)*CONJG(k(2))))+(ABS(k_z(3,l)&
+		  *t_TE(1,l)))**2+(ABS(k_rho(l)*t_TE(2,l)))**2)*((k_rho(l))/(((ABS(k_z(2,l)))**2)*DIMAG(k_z(2,l))))
+END DO
+
+f_k_rho_m=((omega*DIMAG(eps_2))/(16*(pi**2)*c0**2))*f_k_rho_m
+
+END SUBROUTINE integrand_k_rho_book_m
+
+
+SUBROUTINE integrand_k_rho_prop(omega, k, k_z, k_rho, r_TM, r_TE, f_k_rho)
+
+REAL(KIND=8), INTENT(IN) :: omega
+REAL(KIND=8), DIMENSION(:), INTENT(IN) :: k_rho
+REAL(KIND=8), DIMENSION(:), INTENT(OUT) :: f_k_rho
+COMPLEX(KIND=8), DIMENSION(:), INTENT(IN) :: k
+COMPLEX(KIND=8), DIMENSION(:,:), INTENT(IN) :: k_z
+COMPLEX(KIND=8), DIMENSION(:,:), INTENT(IN) :: r_TM, r_TE
+
+
+INTEGER :: l, n
+REAL(KIND=8), PARAMETER :: c0=299792458
+REAL(KIND=8), PARAMETER :: pi=4*ATAN(1.0) !pi=3.14...
+
+n=UBOUND(k_rho,1)
+
+DO l=1, n
+f_k_rho(l) = (k_rho(l)/ABS(k_z(1,l)))*((1-ABS(r_TE(1,l))**2)+(1-ABS(r_TM(1,l))**2))
+END DO
+
+f_k_rho=((k(1)**2)/(omega*4*pi**2))*f_k_rho
+
+END SUBROUTINE integrand_k_rho_prop
+
+SUBROUTINE integrand_k_rho_evan(omega, delta, k, k_z, k_rho, r_TM, r_TE, f_k_rho)
+
+REAL(KIND=8), INTENT(IN) :: omega, delta
+REAL(KIND=8), DIMENSION(:), INTENT(IN) :: k_rho
+REAL(KIND=8), DIMENSION(:), INTENT(OUT) :: f_k_rho
+COMPLEX(KIND=8), DIMENSION(:), INTENT(IN) :: k
+COMPLEX(KIND=8), DIMENSION(:,:), INTENT(IN) :: k_z
+COMPLEX(KIND=8), DIMENSION(:,:), INTENT(IN) :: r_TM, r_TE
+
+
+INTEGER :: l, n
+REAL(KIND=8), PARAMETER :: c0=299792458
+REAL(KIND=8), PARAMETER :: pi=4*ATAN(1.0) !pi=3.14...
+
+n=UBOUND(k_rho,1)
+
+DO l=1, n
+f_k_rho(l) = (k_rho(l)**3/ABS(k_z(1,l)))*(IMAG(r_TM(1,l))+IMAG(r_TE(1,l)))*DEXP(-2*ABS(k_z(1,l))*delta) 
+END DO
+
+f_k_rho=((2*k(1)**2)/(omega*4*pi**2))*f_k_rho
+
+END SUBROUTINE integrand_k_rho_evan
+
+
 
 
 SUBROUTINE intg_simp (n, h, f, intg)
