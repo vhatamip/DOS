@@ -500,7 +500,7 @@ DO l=1, n
 f_k_rho(l) = (k_rho(l)**3/ABS(k_z(1,l)))*(IMAG(r_TM(1,l))+IMAG(r_TE(1,l)))*DEXP(-2*ABS(k_z(1,l))*delta) 
 END DO
 
-f_k_rho=((2*k(1)**2)/(omega*4*pi**2))*f_k_rho
+f_k_rho=((2)/(omega*4*pi**2))*f_k_rho
 
 END SUBROUTINE integrand_k_rho_evan
 

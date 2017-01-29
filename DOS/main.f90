@@ -27,10 +27,10 @@
 !****************************************************************************    
 	INTEGER :: status, number_nodes
 	INTEGER :: i, j, l, m
-	INTEGER, PARAMETER :: omega_n_1=300, omega_n_2=400, omega_n_3=300
+	INTEGER, PARAMETER :: omega_n_1=100, omega_n_2=100, omega_n_3=100
     INTEGER, PARAMETER :: omega_n=omega_n_1+omega_n_2+omega_n_3-2
 	INTEGER, PARAMETER :: delta_n=3     !define number of deltas 
-	INTEGER, PARAMETER :: nodes=49 !N points of (k_ρ) from 0 to k_vac,
+	INTEGER, PARAMETER :: nodes=3 !N points of (k_ρ) from 0 to k_vac,
 										!simpson 1/3, ""N must be even"", k_vac is excluded from the first integral as k_z1=0.0.
 	INTEGER, PARAMETER :: n_k_rho_mesh=50
 	INTEGER, PARAMETER :: media_n=3
@@ -113,7 +113,7 @@ CALL sort_mesh(omega_1, omega_2, omega_3, omega)
 	  
 
 !delta=(/0.01*distance, 0.6*distance, distance/)
-delta=(/1.0E-8, 5.0E-7, 5.0E-7/)
+delta=(/1.0E-8, 5.0E-8, 5.0E-7/)
 
 PRINT*, 'delta', delta
 print*, distance
@@ -168,15 +168,29 @@ ALLOCATE(LDOSem(delta_n,omega_n), intg_e(delta_n,omega_n), intg_e_t(delta_n,omeg
 			d_k_rho_temp=(k(1)-0.0)/(REAL(number_nodes)-1) ! dk_ρ in the integral
 			
 			d_k_rho=d_k_rho_temp*(1+(0.5)/(REAL(number_nodes)-2)) !for eliminating k_0
+			
+			k_rho=0.0
+			DO
+			
 			DO l=1,nodes !k_ρ in the first integral
-	        k_rho(l)=0.0+(l-1)*d_k_rho
+	        k_rho(l)=k_rho(nodes)+(l-1)*d_k_rho
 			END DO
+			
+			IF 	((k_rho(nodes) - REAL(k(1))) >= 0.0) EXIT
+			
 			
 			CALL wave_vector_z(j, mu(:,j), eps(:,j), k, k_rho, k_z)
 			CALL Fresnel(j, mu(:,j), eps(:,j), k_z, r_TM, r_TE)
 			CALL t_12(r_TM, r_TE, delta(i), distance, k_z, k_rho, t_TE, t_TM) !t_1(1)-->TE, t_1(2)-->TM
-            CALL integrand_k_rho_e(omega(j), eps(2,j), k, k_rho, k_z, t_TE, t_TM, f_k_rho_e)
-			CALL integrand_k_rho_m(omega(j), eps(2,j), k, k_rho, k_z, t_TE, t_TM, f_k_rho_m)
+            !!CALL integrand_k_rho_e(omega(j), eps(2,j), k, k_rho, k_z, t_TE, t_TM, f_k_rho_e)
+			!!CALL integrand_k_rho_m(omega(j), eps(2,j), k, k_rho, k_z, t_TE, t_TM, f_k_rho_m)
+			CALL integrand_k_rho_prop(omega(j), k, k_z, k_rho, r_TM, r_TE, f_k_rho_e)
+			CALL intg_simp (nodes, d_k_rho, f_k_rho_e, intg_e(i,j))	
+			intg_e_t(i,j) = intg_e_t(i,j) + intg_e(i,j)
+			intg_e_t_old = intg_e_t(i,j)
+			
+			END DO
+			print*, REAL(k(1))-k_rho(nodes)
 !***********************************************intg1***********************************************
 			!PRINT*, 'n_k_rho_1', n_k_rho_1
 			!PRINT*, 'n_k_rho_2', n_k_rho_2
@@ -188,13 +202,9 @@ ALLOCATE(LDOSem(delta_n,omega_n), intg_e(delta_n,omega_n), intg_e_t(delta_n,omeg
 						
 			!CALL integrand_prop_k_rho(k_rho_1, mu_0, mu_1, eps_r0, eps_r1, k_vac, f_k_rho_1)	
 			
-			CALL intg_simp (nodes, d_k_rho, f_k_rho_e, intg_e(i,j))	
-			CALL intg_simp (nodes, d_k_rho, f_k_rho_m, intg_m(i,j))	
-			   		
-			intg_e_t(i,j) = intg_e_t(i,j) + intg_e(i,j)
-			intg_m_t(i,j) = intg_m_t(i,j) + intg_m(i,j)
-			intg_m_t_old = intg_m_t(i,j)
-			intg_e_t_old = intg_e_t(i,j)
+			
+			
+			
 !***********************************************intg2***********************************************
             !d_k_rho_2=(6*k_vac-k_vac)/(n_k_rho_2-1) ! dk_ρ in the integral
 	        !d_k_rho_2=d_k_rho_1  ! dk_ρ in the integral
@@ -231,7 +241,27 @@ ALLOCATE(LDOSem(delta_n,omega_n), intg_e(delta_n,omega_n), intg_e_t(delta_n,omeg
 				!error=DABS((intg3(i,j)-intg3_old)/(intg1(i,j)+intg2(i,j)+intg3(i,j)))
 				!error=DABS(intg3(i,j))
 				!intg3_old=intg3(i,j)
+			
+			!DO l=1,nodes !k_ρ in the first integral
+	        k_rho(1)=k_rho(nodes)+d_k_rho
+			k_rho(2)=k_rho(nodes)+2*d_k_rho
+			k_rho(3)=k_rho(nodes)+3*d_k_rho
+			!END DO
+			
+			IF 	(k_rho(1) <= REAL(k(1))) EXIT
+			
+			
+			CALL wave_vector_z(j, mu(:,j), eps(:,j), k, k_rho, k_z)
+			CALL Fresnel(j, mu(:,j), eps(:,j), k_z, r_TM, r_TE)
+			CALL t_12(r_TM, r_TE, delta(i), distance, k_z, k_rho, t_TE, t_TM)
 				
+			CALL integrand_k_rho_evan(omega(j), delta(i), k, k_z, k_rho, r_TM, r_TE, f_k_rho_m)
+			CALL intg_simp (nodes, d_k_rho, f_k_rho_m, intg_m(i,j))	
+			   		
+			
+			intg_m_t(i,j) = intg_m_t(i,j) + intg_m(i,j)
+			intg_m_t_old = intg_m_t(i,j)
+			
 		  iter3(i,j)=1								
 		  DO !iterative integral
 						  
@@ -247,25 +277,29 @@ ALLOCATE(LDOSem(delta_n,omega_n), intg_e(delta_n,omega_n), intg_e_t(delta_n,omeg
 				CALL wave_vector_z(j, mu(:,j), eps(:,j), k, k_rho, k_z)
 			    CALL Fresnel(j, mu(:,j), eps(:,j), k_z, r_TM, r_TE)
 			    CALL t_12(r_TM, r_TE, delta(i), distance, k_z, k_rho, t_TE, t_TM) !t_1(1)-->TE, t_1(2)-->TM
-                CALL integrand_k_rho_e(omega(j), eps(2,j), k, k_rho, k_z, t_TE, t_TM, f_k_rho_e)
-			    CALL integrand_k_rho_m(omega(j), eps(2,j), k, k_rho, k_z, t_TE, t_TM, f_k_rho_m)
+                CALL integrand_k_rho_evan(omega(j), delta(i), k, k_z, k_rho, r_TM, r_TE, f_k_rho_m)
+			    CALL intg_simp (nodes, d_k_rho, f_k_rho_m, intg_m(i,j))	
+				!CALL integrand_k_rho_e(omega(j), eps(2,j), k, k_rho, k_z, t_TE, t_TM, f_k_rho_e)
+			    !CALL integrand_k_rho_m(omega(j), eps(2,j), k, k_rho, k_z, t_TE, t_TM, f_k_rho_m)
+				
 				!CALL wave_vector_z(j, mu(:,j), eps(:,j), k, k_rho, k_z)
 			    !CALL Fresnel(j, mu(:,j), eps(:,j), k_z, r_TM, r_TE)
 			    !CALL t_12(r_TM, r_TE, delta(i), distance, k_z, k_rho, t_TE, t_TM) !t_1(1)-->TE, t_1(2)-->TM
                 !CALL integrand_k_rho_e(omega(j), eps(2,j), k, k_rho, k_z, t_TE, t_TM, f_k_rho_e)
 			    !CALL integrand_k_rho_m(omega(j), eps(2,j), k, k_rho, k_z, t_TE, t_TM, f_k_rho_m)
 			    
-				CALL intg_simp (nodes, d_k_rho, f_k_rho_e, intg_e(i,j))	
-			    CALL intg_simp (nodes, d_k_rho, f_k_rho_m, intg_m(i,j))	
+				!!CALL intg_simp (nodes, d_k_rho, f_k_rho_e, intg_e(i,j))	
+			    !!CALL intg_simp (nodes, d_k_rho, f_k_rho_m, intg_m(i,j))	
 			   		
-			    intg_e_t(i,j) = intg_e_t(i,j) + intg_e(i,j)
+			    !!intg_e_t(i,j) = intg_e_t(i,j) + intg_e(i,j)
 			    intg_m_t(i,j) = intg_m_t(i,j) + intg_m(i,j)
 				!intg3(i,j) = intg3(i,j) + intg3_iter(i,j)	
 				
 				!error=ABS((intg3(i,j)-intg3_old)/(intg3(i,j)))
 				error=MAX(DABS((intg_m_t(i,j)-intg_m_t_old)/(intg_m_t(i,j))), DABS((intg_e_t(i,j)-intg_e_t_old)/(intg_e_t(i,j))))
+				error=DABS((intg_m_t(i,j)-intg_m_t_old)/(intg_m_t(i,j)))
 				intg_m_t_old = intg_m_t(i,j)
-			    intg_e_t_old = intg_e_t(i,j)
+			    !!intg_e_t_old = intg_e_t(i,j)
 				
 				IF (MOD(iter3(i,j),100000.0)==0) THEN
 				print*, 'error', error, 'LDOS', intg_m_t(i,j)+intg_e_t(i,j), 'i', i, 'j', j, 'iter', iter3(i,j), 'k_rho', k_rho(nodes), 'd', distance, 'z', delta(2)
